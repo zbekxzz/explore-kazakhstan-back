@@ -1,9 +1,6 @@
 package jwt
 
 import (
-	"errors"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -27,10 +24,9 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func GenerateTokens(email, role string) (string, string, error) {
+func GenerateTokens(email string) (string, string, error) {
 	accessTokenClaims := &Claims{
 		Email: email,
-		Role:  role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(accessTokenExpiresTime).Unix(),
 		},
@@ -50,36 +46,4 @@ func GenerateTokens(email, role string) (string, string, error) {
 		return "", "", err
 	}
 	return accessTokenString, refreshTokenString, nil
-}
-
-func ExtractAdminClaims(r *http.Request) (*Claims, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, errors.New("missing Authorization header")
-	}
-
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-		return nil, errors.New("invalid Authorization header format")
-	}
-
-	tokenString := parts[1]
-
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secretKey), nil
-	})
-	if err != nil {
-		return nil, errors.New("invalid token")
-	}
-
-	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
-		return nil, errors.New("invalid token claims")
-	}
-
-	if claims.Role != "Admin" {
-		return nil, errors.New("user is not an admin")
-	}
-
-	return claims, nil
 }

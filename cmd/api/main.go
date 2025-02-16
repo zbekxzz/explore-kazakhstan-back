@@ -2,32 +2,37 @@ package main
 
 import (
 	"auth/config"
+	"auth/internal/database"
+	"auth/internal/handlers"
 	"auth/internal/jwt"
 	"auth/internal/repository"
 	"github.com/rs/cors"
 	"log"
 	"net/http"
-
-	"auth/internal/database"
-	"auth/internal/handlers"
 )
 
 func main() {
 	cfg := config.AppConfig
 
 	db := database.InitDB(cfg.DatabaseURL)
-	repo := repository.NewUserRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	eventRepo := repository.NewEventRepository(db)
 
 	jwt.InitJWT(cfg.SecretKey, cfg.AccessTokenExpiresTime, cfg.RefreshTokenExpiresTime)
 
-	http.HandleFunc("/api/login", handlers.LoginHandler(repo))
+	http.HandleFunc("/api/login", handlers.LoginHandler(userRepo))
+	http.HandleFunc("/api/register", handlers.RegisterHandler(userRepo))
+	
+	http.HandleFunc("/user/list", handlers.ListUsersHandler(userRepo))
+	http.HandleFunc("/user/update", handlers.UpdateUserHandler(userRepo))
+	http.HandleFunc("/user/delete", handlers.DeleteUserHandler(userRepo))
 
-	http.HandleFunc("/admin/list", handlers.ListUsersHandler(repo))
-	http.HandleFunc("/admin/create", handlers.CreateUserHandler(repo))
-	http.HandleFunc("/admin/update", handlers.UpdateUserHandler(repo))
-	http.HandleFunc("/admin/delete", handlers.DeleteUserHandler(repo))
-
-	http.HandleFunc("/api/upload", handlers.UploadHandler(db))
+	http.HandleFunc("/events/register", handlers.RegisterForEventHandler(eventRepo))
+	http.HandleFunc("/events/list", handlers.ListEventsHandler(eventRepo))
+	http.HandleFunc("/events/get", handlers.GetEventHandler(eventRepo))
+	http.HandleFunc("/events/create", handlers.CreateEventHandler(eventRepo))
+	http.HandleFunc("/events/update", handlers.UpdateEventHandler(eventRepo))
+	http.HandleFunc("/events/delete", handlers.DeleteEventHandler(eventRepo))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:5173/app/user-directory", "http://localhost:5173"},
@@ -39,11 +44,12 @@ func main() {
 			http.MethodOptions,
 		},
 		AllowedHeaders: []string{
-			"Authorization", // Разрешаем заголовок Authorization
-			"Content-Type",  // Разрешаем Content-Type
+			"Authorization",
+			"Content-Type",
 		},
 		AllowCredentials: true,
 	})
+
 	handler := c.Handler(http.DefaultServeMux)
 
 	log.Println("Starting server on :3000")

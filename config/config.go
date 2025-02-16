@@ -11,8 +11,8 @@ type Config struct {
 }
 
 var AppConfig = Config{
-	DatabaseURL:             "postgres://postgres:Zbekxzz3$$@localhost:5432/auth?sslmode=disable",
-	SecretKey:               "super_secret_key",
+	DatabaseURL:             "postgres://postgres:Zbekxzz3$$@localhost:5432/explore-kazakhstan?sslmode=disable",
+	SecretKey:               "explore",
 	Port:                    "3000",
 	AccessTokenExpiresTime:  15 * time.Minute,
 	RefreshTokenExpiresTime: 24 * time.Hour,
