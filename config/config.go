@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
 	DatabaseURL             string
@@ -11,7 +14,7 @@ type Config struct {
 }
 
 var AppConfig = Config{
-	DatabaseURL:             "postgres://postgres:Zbekxzz3$$@localhost:5432/explore-kazakhstan?sslmode=disable",
+	DatabaseURL:             os.Getenv("DATABASE_URL"),
 	SecretKey:               "explore",
 	Port:                    "3000",
 	AccessTokenExpiresTime:  15 * time.Minute,
