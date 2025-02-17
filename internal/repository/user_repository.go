@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strconv"
 )
 
 type User struct {
@@ -101,28 +100,10 @@ func (repo *UserRepository) GetAllUsers() ([]User, error) {
 	return users, nil
 }
 
-func (repo *UserRepository) UpdateByID(id string, newEmail, newPassword string) error {
-	userID, err := strconv.Atoi(id)
-
+func (repo *UserRepository) UpdateByEmail(email, newEmail, newPassword string) error {
+	_, err := repo.DB.Exec("UPDATE users SET email=$1, password=$2 WHERE email=$3", newEmail, newPassword, email)
 	if err != nil {
-		return fmt.Errorf("invalid user ID: %w", err)
+		return fmt.Errorf("failed to update user: %w", err)
 	}
-
-	_, err = repo.DB.Exec("UPDATE users SET email=$1, password=$2 WHERE id=$3", newEmail, newPassword, userID)
-	return err
-}
-
-func (repo *UserRepository) DeleteByID(id string) error {
-	userID, err := strconv.Atoi(id)
-	if err != nil {
-		return fmt.Errorf("invalid user ID: %w", err)
-	}
-
-	_, err = repo.DB.Exec("DELETE FROM events WHERE user_id=$1", userID)
-	if err != nil {
-		return err
-	}
-
-	_, err = repo.DB.Exec("DELETE FROM users WHERE id=$1", userID)
-	return err
+	return nil
 }

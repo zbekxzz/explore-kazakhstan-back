@@ -1,6 +1,9 @@
 package jwt
 
 import (
+	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -20,7 +23,6 @@ func InitJWT(key string, AccessTime time.Duration, refreshTime time.Duration) {
 
 type Claims struct {
 	Email string `json:"email"`
-	Role  string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -46,4 +48,32 @@ func GenerateTokens(email string) (string, string, error) {
 		return "", "", err
 	}
 	return accessTokenString, refreshTokenString, nil
+}
+
+func ExtractUserEmail(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("missing Authorization header")
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return "", errors.New("invalid Authorization header format")
+	}
+
+	tokenString := parts[1]
+
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		return "", errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return "", errors.New("invalid token claims")
+	}
+
+	return claims.Email, nil
 }

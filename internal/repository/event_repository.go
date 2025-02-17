@@ -85,7 +85,7 @@ func (repo *EventRepository) Create(event Event) error {
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 		event.UserID, event.Title, event.Date, event.Time, event.Venue,
 		event.Description, event.Note, event.Price, event.ImageURL,
-		pq.Array(event.Attendees), // ✅ Исправляем ошибку: передаем массив как `pq.Array`
+		pq.Array(event.Attendees),
 		event.IsActive)
 	return err
 }
@@ -121,7 +121,6 @@ func (repo *EventRepository) RegisterUserForEvent(eventID, userEmail string) (*E
 	var attendees []string
 	var event Event
 
-	// Получаем данные о событии
 	err := repo.DB.QueryRow(`
 		SELECT id, user_id, title, date, time, venue, description 
 		FROM events WHERE id=$1`, eventID).
@@ -133,7 +132,6 @@ func (repo *EventRepository) RegisterUserForEvent(eventID, userEmail string) (*E
 		return nil, err
 	}
 
-	// Получаем текущий список участников
 	err = repo.DB.QueryRow("SELECT attendees FROM events WHERE id=$1", eventID).Scan(pq.Array(&attendees))
 	if err != nil {
 		return nil, err

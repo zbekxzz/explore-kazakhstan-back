@@ -88,12 +88,13 @@ func ListUsersHandler(repo *repository.UserRepository) http.HandlerFunc {
 
 func UpdateUserHandler(repo *repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		if id == "" {
-			http.Error(w, "missing user ID in query parameters", http.StatusBadRequest)
+		email, err := jwt.ExtractUserEmail(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
+		// Декодируем новые данные пользователя
 		var user struct {
 			NewEmail    string `json:"new_email"`
 			NewPassword string `json:"new_password"`
@@ -103,32 +104,39 @@ func UpdateUserHandler(repo *repository.UserRepository) http.HandlerFunc {
 			return
 		}
 
+		// Хешируем новый пароль
 		hashedPassword, _ := utils.HashPassword(user.NewPassword)
 
-		err := repo.UpdateByID(id, user.NewEmail, hashedPassword)
+		// Обновляем данные в базе
+		err = repo.UpdateByEmail(email, user.NewEmail, hashedPassword)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to update user: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Fprintf(w, "User with ID %s updated", id)
+		fmt.Fprintf(w, "User with email %s updated", email)
 	}
 }
 
-func DeleteUserHandler(repo *repository.UserRepository) http.HandlerFunc {
+func GetUserHandler(repo *repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		if id == "" {
-			http.Error(w, "missing user ID in query parameters", http.StatusBadRequest)
-			return
-		}
-
-		err := repo.DeleteByID(id)
+		email, err := jwt.ExtractUserEmail(r)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to delete user: %v", err), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		fmt.Fprintf(w, "User with ID %s deleted", id)
+		user, err := repo.FindByEmail(email)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to retrieve user: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if user == nil {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(user)
 	}
 }

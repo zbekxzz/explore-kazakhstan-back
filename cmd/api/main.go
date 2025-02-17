@@ -24,9 +24,9 @@ func main() {
 	http.HandleFunc("/api/login", handlers.LoginHandler(userRepo))
 	http.HandleFunc("/api/register", handlers.RegisterHandler(userRepo))
 
+	http.HandleFunc("/user/me", handlers.GetUserHandler(userRepo))
 	http.HandleFunc("/user/list", handlers.ListUsersHandler(userRepo))
 	http.HandleFunc("/user/update", handlers.UpdateUserHandler(userRepo))
-	http.HandleFunc("/user/delete", handlers.DeleteUserHandler(userRepo))
 
 	http.HandleFunc("/events/register", handlers.RegisterForEventHandler(eventRepo))
 	http.HandleFunc("/events/list", handlers.ListEventsHandler(eventRepo))

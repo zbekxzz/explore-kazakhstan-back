@@ -126,20 +126,17 @@ func RegisterForEventHandler(repo *repository.EventRepository) http.HandlerFunc 
 			Email   string `json:"email"`
 		}
 
-		// Декодируем запрос
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			http.Error(w, "Invalid input", http.StatusBadRequest)
 			return
 		}
 
-		// Регистрируем пользователя на событие
 		event, err := repo.RegisterUserForEvent(request.EventID, request.Email)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to register user: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		// Отправляем письмо с подтверждением
 		mailInfo := utils.EventInfo{
 			Name:        request.Email,
 			Title:       event.Title,
@@ -148,9 +145,8 @@ func RegisterForEventHandler(repo *repository.EventRepository) http.HandlerFunc 
 			Venue:       event.Venue,
 			Description: event.Description,
 		}
-		go mailInfo.SendEventRegistrationMail() // Запуск в горутине, чтобы не блокировать ответ
+		go mailInfo.SendEventRegistrationMail()
 
-		// Отправляем ответ
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "User %s registered for event %s", request.Email, request.EventID)
 	}
