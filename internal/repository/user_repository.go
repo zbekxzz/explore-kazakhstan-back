@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
 )
 
 type User struct {
@@ -47,12 +48,14 @@ func (repo *UserRepository) FindByEmail(email string) (*User, error) {
 
 	for rows.Next() {
 		var event Event
-		var attendeesArray []string
+		var attendeesArray []string // Go массив строк
+
 		if err := rows.Scan(&event.ID, &event.UserID, &event.Title, &event.Date, &event.Time, &event.Venue,
-			&event.Description, &event.Note, &event.Price, &event.ImageURL, &attendeesArray,
+			&event.Description, &event.Note, &event.Price, &event.ImageURL, pq.Array(&attendeesArray),
 			&event.IsActive, &event.CreatedAt); err != nil {
 			return nil, err
 		}
+
 		event.Attendees = attendeesArray
 		user.Events = append(user.Events, event)
 	}
