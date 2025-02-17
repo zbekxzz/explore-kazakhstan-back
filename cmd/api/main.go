@@ -9,6 +9,7 @@ import (
 	"github.com/rs/cors"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 
 	http.HandleFunc("/api/login", handlers.LoginHandler(userRepo))
 	http.HandleFunc("/api/register", handlers.RegisterHandler(userRepo))
-	
+
 	http.HandleFunc("/user/list", handlers.ListUsersHandler(userRepo))
 	http.HandleFunc("/user/update", handlers.UpdateUserHandler(userRepo))
 	http.HandleFunc("/user/delete", handlers.DeleteUserHandler(userRepo))
@@ -52,6 +53,12 @@ func main() {
 
 	handler := c.Handler(http.DefaultServeMux)
 
-	log.Println("Starting server on :3000")
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, handler))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" // Если PORT не задан, использует 3000
+	}
+
+	log.Println("Starting server on port " + port)
+	log.Fatal(http.ListenAndServe(":"+port, handler))
+
 }
