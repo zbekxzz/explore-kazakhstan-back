@@ -36,7 +36,7 @@ func main() {
 	http.HandleFunc("/events/delete", handlers.DeleteEventHandler(eventRepo))
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173/app/user-directory", "http://localhost:5173"},
+		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{
 			http.MethodGet,
 			http.MethodPost,
